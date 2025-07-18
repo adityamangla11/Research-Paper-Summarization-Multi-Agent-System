@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Paper Summarization System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        .loader {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div x-data="researchApp()" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-4">📚 Research Paper Summarization System</h1>
+            <p class="text-gray-600 text-lg">Discover, analyze, and synthesize research papers with AI</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex justify-center mb-8">
+            <div class="bg-white rounded-lg shadow-md p-1">
+                <button @click="activeTab = 'search'" :class="activeTab === 'search' ? 'bg-blue-500 text-white' : 'text-gray-600'"
+                        class="px-6 py-2 rounded-md font-medium transition-all duration-200">
+                    🔍 Search Papers
+                </button>
+                <button @click="activeTab = 'upload'" :class="activeTab === 'upload' ? 'bg-blue-500 text-white' : 'text-gray-600'"
+                        class="px-6 py-2 rounded-md font-medium transition-all duration-200">
+                    📄 Upload Files
+                </button>
+                <button @click="activeTab = 'results'" :class="activeTab === 'results' ? 'bg-blue-500 text-white' : 'text-gray-600'"
+                        class="px-6 py-2 rounded-md font-medium transition-all duration-200">
+                    📊 Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Tab -->
+        <div x-show="activeTab === 'search'" class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Search Research Papers</h2>
+                
+                <form @submit.prevent="searchPapers()" class="space-y-6">
+                    <!-- Basic Search -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Query *</label>
+                        <input x-model="searchQuery" type="text" 
+                               placeholder="e.g., machine learning, natural language processing..."
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                               required>
+                    </div>
+                    
+                    <!-- Basic Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Number of Papers</label>
+                            <select x-model="maxPapers" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                <option value="5">5 papers</option>
+                                <option value="10">10 papers</option>
+                                <option value="15">15 papers</option>
+                                <option value="20">20 papers</option>
+                                <option value="25">25 papers</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Topics (Optional)</label>
+                            <input x-model="topics" type="text" 
+                                   placeholder="AI, ML, Computer Vision (comma-separated)"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Advanced Filters Toggle -->
+                    <div class="border-t pt-4">
+                        <button type="button" @click="showAdvancedFilters = !showAdvancedFilters"
+                                class="flex items-center text-blue-600 hover:text-blue-800 font-medium">
+                            <span x-text="showAdvancedFilters ? '▼' : '▶'" class="mr-2"></span>
+                            Advanced Filters
+                        </button>
+                    </div>
+
+                    <!-- Advanced Filters Section -->
+                    <div x-show="showAdvancedFilters" x-transition class="space-y-4 bg-gray-50 p-4 rounded-lg">
+                        <!-- Year Range -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">From Year</label>
+                                <input x-model="fromYear" type="number" min="1990" :max="new Date().getFullYear()"
+                                       placeholder="e.g., 2020"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">To Year</label>
+                                <input x-model="toYear" type="number" min="1990" :max="new Date().getFullYear()"
+                                       placeholder="e.g., 2024"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+
+                        <!-- Publication Type and Citations -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Publication Type</label>
+                                <select x-model="publicationType" class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Any Type</option>
+                                    <option value="cs">Computer Science</option>
+                                    <option value="physics">Physics</option>
+                                    <option value="math">Mathematics</option>
+                                    <option value="stat">Statistics</option>
+                                    <option value="econ">Economics</option>
+                                    <option value="bio">Biology</option>
+                                    <option value="finance">Finance</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Min Citations</label>
+                                <input x-model="minCitations" type="number" min="0"
+                                       placeholder="e.g., 10"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">Note: Not supported by ArXiv API</p>
+                            </div>
+                        </div>
+
+                        <!-- Must Include/Exclude Terms -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Must Include Terms</label>
+                                <input x-model="mustInclude" type="text"
+                                       placeholder="neural network, transformer (comma-separated)"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">Papers must contain these terms</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Must Exclude Terms</label>
+                                <input x-model="mustExclude" type="text"
+                                       placeholder="blockchain, survey (comma-separated)"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                                <p class="text-xs text-gray-500 mt-1">Papers must NOT contain these terms</p>
+                            </div>
+                        </div>
+
+                        <!-- Quick Filter Examples -->
+                        <div x-show="showAdvancedFilters" class="border-t pt-4">
+                            <h4 class="text-sm font-medium text-gray-700 mb-3">Quick Filter Examples:</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <button type="button" @click="applyQuickFilter('recent')"
+                                        class="text-left p-3 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 text-sm">
+                                    <div class="font-medium text-blue-800">Recent Papers</div>
+                                    <div class="text-blue-600">2022-2024</div>
+                                </button>
+                                <button type="button" @click="applyQuickFilter('cs_ml')"
+                                        class="text-left p-3 bg-green-50 hover:bg-green-100 rounded border border-green-200 text-sm">
+                                    <div class="font-medium text-green-800">CS + ML Focus</div>
+                                    <div class="text-green-600">Computer Science, neural networks</div>
+                                </button>
+                                <button type="button" @click="applyQuickFilter('no_surveys')"
+                                        class="text-left p-3 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200 text-sm">
+                                    <div class="font-medium text-purple-800">No Surveys</div>
+                                    <div class="text-purple-600">Exclude review papers</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Filter Summary -->
+                        <div x-show="hasActiveFilters()" class="bg-blue-50 p-3 rounded border border-blue-200">
+                            <h4 class="font-medium text-blue-800 mb-2">Active Filters:</h4>
+                            <div class="text-sm text-blue-700 space-y-1">
+                                <div x-show="fromYear || toYear">
+                                    📅 Years: <span x-text="(fromYear || '1990') + ' - ' + (toYear || new Date().getFullYear())"></span>
+                                </div>
+                                <div x-show="publicationType">
+                                    🏷️ Type: <span x-text="getPublicationTypeLabel(publicationType)"></span>
+                                </div>
+                                <div x-show="minCitations">
+                                    📊 Min Citations: <span x-text="minCitations"></span>
+                                </div>
+                                <div x-show="mustInclude">
+                                    ✅ Must Include: <span x-text="mustInclude"></span>
+                                </div>
+                                <div x-show="mustExclude">
+                                    ❌ Must Exclude: <span x-text="mustExclude"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Clear Filters Button -->
+                        <div x-show="hasActiveFilters()" class="text-center">
+                            <button type="button" @click="clearFilters()"
+                                    class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 hover:border-gray-400 rounded-md transition-colors">
+                                🗑️ Clear All Filters
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" :disabled="isLoading || !searchQuery"
+                            class="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium">
+                        <span x-show="!isLoading">🔍 Search & Analyze Papers</span>
+                        <span x-show="isLoading" class="flex items-center justify-center">
+                            <div class="loader mr-2"></div>
+                            Processing...
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Upload Tab -->
+        <div x-show="activeTab === 'upload'" class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Upload Research Papers</h2>
+                
+                <form @submit.prevent="uploadFiles()" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Files</label>
+                        <input @change="handleFileSelect" type="file" multiple accept=".pdf,.txt"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                        <p class="text-sm text-gray-500 mt-1">Supported formats: PDF, TXT</p>
+                    </div>
+                    
+                    <div x-show="selectedFiles.length > 0" class="space-y-2">
+                        <p class="font-medium text-gray-700">Selected Files:</p>
+                        <template x-for="file in selectedFiles" :key="file.name">
+                            <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                <span x-text="file.name" class="text-sm"></span>
+                                <span x-text="formatFileSize(file.size)" class="text-xs text-gray-500"></span>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Topics (Optional)</label>
+                        <input x-model="uploadTopics" type="text" 
+                               placeholder="AI, ML, Computer Vision (comma-separated)"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <button type="submit" :disabled="isLoading || selectedFiles.length === 0"
+                            class="w-full bg-green-600 text-white py-3 px-6 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 font-medium">
+                        <span x-show="!isLoading">📤 Upload & Process Files</span>
+                        <span x-show="isLoading" class="flex items-center justify-center">
+                            <div class="loader mr-2"></div>
+                            Uploading...
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div x-show="activeTab === 'results'" class="max-w-6xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Analysis Results</h2>
+                
+                <!-- Status Display -->
+                <div x-show="currentWorkflow" class="mb-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <div x-show="workflowStatus === 'processing'" class="loader"></div>
+                                <span x-show="workflowStatus === 'completed'">✅</span>
+                                <span x-show="workflowStatus === 'failed'">❌</span>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-blue-700">
+                                    <span x-text="statusMessage"></span>
+                                    <span x-show="progress > 0" class="font-bold text-blue-800" x-text="'(' + progress + '%)'"></span>
+                                </p>
+                                <p class="text-xs text-blue-600 mt-1">Workflow ID: <span x-text="currentWorkflow"></span></p>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div x-show="progress > 0" class="mt-3">
+                            <div class="bg-blue-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                     :style="'width: ' + progress + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div x-show="results && workflowStatus === 'completed'" class="space-y-6 fade-in">
+                    <!-- Summary Section -->
+                    <div x-show="results.synthesis" class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">📋 Research Synthesis</h3>
+                        <p x-text="results.synthesis.synthesis" class="text-gray-700 leading-relaxed"></p>
+                        
+                        <div x-show="results.synthesis.paper_count" class="mt-4 text-sm text-gray-500">
+                            Analyzed <span x-text="results.synthesis.paper_count"></span> papers
+                        </div>
+                    </div>
+
+                    <!-- Papers List -->
+                    <div x-show="results.papers && results.papers.length > 0" class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-800">📚 Analyzed Papers</h3>
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span x-text="results.papers.length + ' papers'"></span>
+                                <span>•</span>
+                                <span x-text="results.papers.filter(p => p.url).length + ' with links'"></span>
+                                <span>•</span>
+                                <span x-text="results.papers.filter(p => p.doi).length + ' with DOI'"></span>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <template x-for="(paper, index) in results.papers" :key="paper.id">
+                                <div class="border border-gray-100 rounded p-3 hover:bg-gray-50 transition-colors">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <template x-if="paper.url">
+                                                <a :href="paper.url" target="_blank" class="block">
+                                                    <h4 class="font-medium text-blue-700 hover:text-blue-900 hover:underline transition-colors cursor-pointer" x-text="paper.title"></h4>
+                                                </a>
+                                            </template>
+                                            <template x-if="!paper.url">
+                                                <h4 class="font-medium text-gray-800" x-text="paper.title"></h4>
+                                            </template>
+                                            <p class="text-sm text-gray-600 mt-1">
+                                                Authors: <span x-text="paper.authors ? paper.authors.join(', ') : 'Unknown'"></span>
+                                            </p>
+                                        </div>
+                                        <!-- Paper Links -->
+                                        <div class="flex flex-col space-y-1 ml-4">
+                                            <template x-if="paper.url">
+                                                <a :href="paper.url" target="_blank" 
+                                                   class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs hover:bg-blue-200 transition-colors font-medium">
+                                                    <span class="mr-1">🔗</span>
+                                                    <span x-text="paper.url.includes('arxiv.org') ? 'ArXiv' : 'View Paper'"></span>
+                                                    <span class="ml-1">↗</span>
+                                                </a>
+                                            </template>
+                                            <template x-if="paper.doi && !paper.doi.startsWith('arXiv:')">
+                                                <a :href="'https://doi.org/' + paper.doi" target="_blank" 
+                                                   class="inline-flex items-center px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs hover:bg-green-200 transition-colors font-medium">
+                                                    <span class="mr-1">📄</span>
+                                                    <span>DOI</span>
+                                                    <span class="ml-1">↗</span>
+                                                </a>
+                                            </template>
+                                            <template x-if="paper.doi && paper.doi.startsWith('arXiv:')">
+                                                <span class="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                                                    <span class="mr-1">📚</span>
+                                                    <span x-text="paper.doi"></span>
+                                                </span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Topics -->
+                                    <div x-show="paper.topics && paper.topics.length > 0" class="mt-2">
+                                        <div class="flex flex-wrap gap-1">
+                                            <template x-for="topic in paper.topics" :key="topic">
+                                                <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs" x-text="topic"></span>
+                                            </template>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Summary with expand/collapse -->
+                                    <div x-show="results.summaries && results.summaries[index]" class="mt-3 p-3 bg-blue-50 rounded-lg" x-data="{ summaryExpanded: false }">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div class="flex items-center">
+                                                <span class="text-sm font-medium text-blue-800">📝 AI Summary</span>
+                                                <span x-show="results.summaries[index].method" 
+                                                      class="ml-2 px-2 py-1 bg-blue-200 text-blue-700 rounded text-xs"
+                                                      x-text="results.summaries[index].method"></span>
+                                            </div>
+                                            <button @click="summaryExpanded = !summaryExpanded"
+                                                    class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                    x-text="summaryExpanded ? '▲ Collapse' : '▼ Expand'">
+                                            </button>
+                                        </div>
+                                        
+                                        <div x-show="!summaryExpanded">
+                                            <p class="text-sm text-gray-700" x-text="results.summaries[index].summary && results.summaries[index].summary.length > 400 ? results.summaries[index].summary.substring(0, 400) + '...' : results.summaries[index].summary"></p>
+                                        </div>
+                                        
+                                        <div x-show="summaryExpanded">
+                                            <p class="text-sm text-gray-700" x-text="results.summaries[index].summary"></p>
+                                            
+                                            <!-- Key Insights -->
+                                            <div x-show="results.summaries[index].key_insights && results.summaries[index].key_insights.length > 0" class="mt-3">
+                                                <span class="text-xs font-medium text-blue-700">💡 Key Insights:</span>
+                                                <ul class="text-xs text-gray-600 mt-1 space-y-1">
+                                                    <template x-for="insight in results.summaries[index].key_insights" :key="insight">
+                                                        <li class="flex items-start">
+                                                            <span class="text-blue-500 mr-1">•</span>
+                                                            <span x-text="insight"></span>
+                                                        </li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Audio Files -->
+                    <div x-show="results.audio_files && results.audio_files.length > 0" class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">🔊 Audio Summaries</h3>
+                        <div class="space-y-4">
+                            <template x-for="(audioFile, index) in results.audio_files" :key="audioFile">
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-sm font-medium text-gray-700" x-text="`Part ${index + 1}`"></span>
+                                        <span class="text-xs text-gray-500" x-text="audioFile.split('/').pop()"></span>
+                                    </div>
+                                    <audio controls class="w-full" preload="metadata">
+                                        <source :src="audioFile" type="audio/mpeg">
+                                        <source :src="audioFile" type="audio/wav">
+                                        <source :src="audioFile" type="audio/mp3">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    <div class="mt-2 flex items-center space-x-4 text-sm">
+                                        <a :href="audioFile" download class="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+                                            <span>⬇️</span>
+                                            <span>Download</span>
+                                        </a>
+                                        <span class="text-gray-500">Synthesis Audio Summary</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Results Message -->
+                <div x-show="!currentWorkflow && !results" class="text-center py-12">
+                    <div class="text-gray-400 text-6xl mb-4">📊</div>
+                    <h3 class="text-lg font-medium text-gray-600 mb-2">No Analysis Results Yet</h3>
+                    <p class="text-gray-500">Start by searching for papers or uploading files to see results here.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        <div x-show="errorMessage" class="max-w-4xl mx-auto mt-6">
+            <div class="bg-red-50 border-l-4 border-red-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <span class="text-red-400">⚠️</span>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700" x-text="errorMessage"></p>
+                    </div>
+                    <div class="ml-auto">
+                        <button @click="errorMessage = ''" class="text-red-400 hover:text-red-600">✕</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function researchApp() {
+            return {
+                activeTab: 'search',
+                searchQuery: '',
+                maxPapers: 10,
+                topics: '',
+                uploadTopics: '',
+                selectedFiles: [],
+                isLoading: false,
+                currentWorkflow: null,
+                workflowStatus: 'pending',
+                progress: 0,
+                statusMessage: '',
+                results: null,
+                errorMessage: '',
+                websocket: null,
+                
+                // Advanced filter variables
+                showAdvancedFilters: false,
+                fromYear: '',
+                toYear: '',
+                publicationType: '',
+                minCitations: '',
+                mustInclude: '',
+                mustExclude: '',
+
+                // Helper functions
+                hasActiveFilters() {
+                    return this.fromYear || this.toYear || this.publicationType || 
+                           this.minCitations || this.mustInclude || this.mustExclude;
+                },
+
+                getPublicationTypeLabel(type) {
+                    const types = {
+                        'cs': 'Computer Science',
+                        'physics': 'Physics',
+                        'math': 'Mathematics',
+                        'stat': 'Statistics',
+                        'econ': 'Economics',
+                        'bio': 'Biology',
+                        'finance': 'Finance'
+                    };
+                    return types[type] || type;
+                },
+
+                applyQuickFilter(filterType) {
+                    switch(filterType) {
+                        case 'recent':
+                            this.fromYear = '2022';
+                            this.toYear = '2024';
+                            break;
+                        case 'cs_ml':
+                            this.publicationType = 'cs';
+                            this.mustInclude = 'neural network, machine learning';
+                            break;
+                        case 'no_surveys':
+                            this.mustExclude = 'survey, review, systematic review';
+                            break;
+                    }
+                },
+
+                clearFilters() {
+                    this.fromYear = '';
+                    this.toYear = '';
+                    this.publicationType = '';
+                    this.minCitations = '';
+                    this.mustInclude = '';
+                    this.mustExclude = '';
+                },
+
+                async searchPapers() {
+                    if (!this.searchQuery.trim()) {
+                        this.errorMessage = 'Please enter a search query';
+                        return;
+                    }
+
+                    // Validate year range
+                    if (this.fromYear && this.toYear && parseInt(this.fromYear) > parseInt(this.toYear)) {
+                        this.errorMessage = 'From year cannot be greater than to year';
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    this.errorMessage = '';
+
+                    try {
+                        const topicsArray = this.topics ? this.topics.split(',').map(t => t.trim()).filter(t => t) : [];
+                        const mustIncludeArray = this.mustInclude ? this.mustInclude.split(',').map(t => t.trim()).filter(t => t) : [];
+                        const mustExcludeArray = this.mustExclude ? this.mustExclude.split(',').map(t => t.trim()).filter(t => t) : [];
+                        
+                        const requestBody = {
+                            query: this.searchQuery,
+                            topics: topicsArray,
+                            max_papers: parseInt(this.maxPapers)
+                        };
+
+                        // Add advanced filters if they have values
+                        if (this.fromYear) requestBody.from_year = parseInt(this.fromYear);
+                        if (this.toYear) requestBody.to_year = parseInt(this.toYear);
+                        if (this.publicationType) requestBody.publication_type = this.publicationType;
+                        if (this.minCitations) requestBody.min_citations = parseInt(this.minCitations);
+                        if (mustIncludeArray.length > 0) requestBody.must_include = mustIncludeArray;
+                        if (mustExcludeArray.length > 0) requestBody.must_exclude = mustExcludeArray;
+                        
+                        const response = await fetch('/api/v1/process/search', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.currentWorkflow = data.workflow_id;
+                            this.activeTab = 'results';
+                            this.startWorkflowMonitoring();
+                        } else {
+                            this.errorMessage = data.detail || data.error || 'Failed to start search';
+                        }
+                    } catch (error) {
+                        this.errorMessage = 'Network error: ' + error.message;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                async uploadFiles() {
+                    if (this.selectedFiles.length === 0) {
+                        this.errorMessage = 'Please select at least one file';
+                        return;
+                    }
+
+                    this.isLoading = true;
+                    this.errorMessage = '';
+
+                    try {
+                        const formData = new FormData();
+                        for (const file of this.selectedFiles) {
+                            formData.append('files', file);
+                        }
+
+                        const topicsArray = this.uploadTopics ? this.uploadTopics.split(',').map(t => t.trim()).filter(t => t) : [];
+                        topicsArray.forEach(topic => formData.append('topics', topic));
+
+                        const response = await fetch('/api/v1/process/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            this.currentWorkflow = data.workflow_id;
+                            this.activeTab = 'results';
+                            this.startWorkflowMonitoring();
+                        } else {
+                            this.errorMessage = data.detail || 'Failed to upload files';
+                        }
+                    } catch (error) {
+                        this.errorMessage = 'Network error: ' + error.message;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                handleFileSelect(event) {
+                    this.selectedFiles = Array.from(event.target.files);
+                },
+
+                formatFileSize(bytes) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                },
+
+                async startWorkflowMonitoring() {
+                    if (!this.currentWorkflow) return;
+
+                    // Try WebSocket first, fall back to polling
+                    try {
+                        const wsUrl = `ws://${window.location.host}/ws/status/${this.currentWorkflow}`;
+                        this.websocket = new WebSocket(wsUrl);
+                        
+                        this.websocket.onmessage = (event) => {
+                            const status = JSON.parse(event.data);
+                            this.updateWorkflowStatus(status);
+                        };
+
+                        this.websocket.onerror = () => {
+                            console.log('WebSocket error, falling back to polling');
+                            // Fall back to polling if WebSocket fails
+                            this.startPolling();
+                        };
+
+                        this.websocket.onclose = (event) => {
+                            console.log('WebSocket closed:', event.code, event.reason);
+                            this.websocket = null;
+                            
+                            // If connection closed but we haven't got results yet, do a final status check
+                            if (this.workflowStatus === 'processing' || this.workflowStatus === 'pending') {
+                                setTimeout(() => this.fetchFinalStatus(), 1000);
+                            }
+                        };
+                    } catch (error) {
+                        console.log('WebSocket connection failed, using polling');
+                        this.startPolling();
+                    }
+                },
+
+                async fetchFinalStatus() {
+                    try {
+                        const response = await fetch(`/api/v1/status/${this.currentWorkflow}`);
+                        const status = await response.json();
+                        console.log('Final status check:', status);
+                        this.updateWorkflowStatus(status);
+                    } catch (error) {
+                        console.error('Final status check failed:', error);
+                    }
+                },
+
+                async startPolling() {
+                    console.log('Starting polling for workflow status');
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const response = await fetch(`/api/v1/status/${this.currentWorkflow}`);
+                            const status = await response.json();
+                            
+                            this.updateWorkflowStatus(status);
+
+                            if (status.status === 'completed' || status.status === 'failed') {
+                                clearInterval(pollInterval);
+                                console.log('Polling stopped, workflow finished');
+                            }
+                        } catch (error) {
+                            console.error('Polling error:', error);
+                        }
+                    }, 1000); // Reduced polling interval for more responsive updates
+                },
+
+                updateWorkflowStatus(status) {
+                    console.log('Received status update:', status); // Debug log
+                    
+                    if (status.status === 'not_found') {
+                        this.errorMessage = 'Workflow not found';
+                        return;
+                    }
+
+                    this.workflowStatus = status.status;
+                    this.progress = Math.round(status.progress || 0);
+                    this.statusMessage = status.message || 'Processing...';
+
+                    if (status.status === 'completed' && status.results) {
+                        console.log('Setting results:', status.results); // Debug log
+                        this.results = status.results;
+                    } else if (status.status === 'failed') {
+                        this.errorMessage = status.message || 'Processing failed';
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
