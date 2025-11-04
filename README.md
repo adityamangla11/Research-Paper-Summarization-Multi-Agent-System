@@ -2,14 +2,9 @@
 
 An AI-powered system for discovering, processing, and summarizing research papers with audio generation capabilities.
 
-## 🆕 FEATURES
-
-- **🌐 Web User Interface**: Simple and responsive web interface
-- **💫 Interactive Experience**: Upload files, search papers, and view results seamlessly
-- **📈 Progress Tracking**: Live progress updates with visual indicators
-
 ## Features
 
+- **🌐 Web User Interface**: Simple and responsive web interface
 - **Multi-source Discovery**: Search across arXiv, PubMed, and Semantic Scholar
 - **Intelligent Processing**: Automated classification and summarization using BART/T5 models
 - **Audio Generation**: Convert summaries to podcast-style audio using ElevenLabs TTS
