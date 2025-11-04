@@ -2,10 +2,9 @@
 
 An AI-powered system for discovering, processing, and summarizing research papers with audio generation capabilities.
 
-## 🆕 NEW FEATURES
+## 🆕 FEATURES
 
-- **🌐 Web User Interface**: Beautiful, responsive web interface at `/app`
-- **📊 Real-time Results**: See progress and results in the browser instead of terminal
+- **🌐 Web User Interface**: Simple and responsive web interface
 - **💫 Interactive Experience**: Upload files, search papers, and view results seamlessly
 - **📈 Progress Tracking**: Live progress updates with visual indicators
 
@@ -18,53 +17,22 @@ An AI-powered system for discovering, processing, and summarizing research paper
 - **RESTful API**: Easy integration with web and mobile applications
 - **Interactive Web UI**: User-friendly interface for non-technical users
 
-## Project Structure
-
-```
-├── main.py              # Main application file (FastAPI server + all agents)
-├── templates/           # Web interface templates
-│   └── index.html      # Main web UI (NEW!)
-├── test_system.py      # System test script (NEW!)
-├── agents.ipynb         # Agent implementations (Jupyter notebook)
-├── apis.ipynb          # API endpoints (Jupyter notebook)
-├── audio.ipynb         # Audio generation (Jupyter notebook)
-├── db_schema.sql       # Database schema
-├── requirements.txt    # Python dependencies
-├── test_api.py        # API test script
-├── .env.example       # Environment variables template
-├── uploads/           # Uploaded PDF files
-├── audio/            # Generated audio files
-└── vahan_env/        # Python virtual environment
-```
 
 ## Quick Start
 
-### 1. Activate the Virtual Environment
-
-```bash
-source vahan_env/bin/activate
-```
-
-### 2. Install Dependencies (if needed)
+### 1. Install Dependencies 
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Configure Environment Variables
-
-```bash
-cp .env.example .env
-# Edit .env with your API keys (optional for basic functionality)
-```
-
-### 4. Run the Server
+### 2. Run the Server
 
 ```bash
 python main.py
 ```
 
-### 5. Access the Application
+### 3. Access the Application
 
 **🌐 Web Interface (RECOMMENDED):**
 - Open your browser and go to: http://localhost:8000/app
@@ -74,12 +42,6 @@ python main.py
 **📚 API Documentation:**
 - FastAPI docs: http://localhost:8000/docs
 - Health check: http://localhost:8000
-
-### 6. Test the System
-
-```bash
-python test_system.py
-```
 
 ## 🎯 How to Use
 
@@ -129,25 +91,6 @@ curl -X POST "http://localhost:8000/api/v1/process/upload" \
 ```bash
 curl "http://localhost:8000/api/v1/status/{workflow_id}"
 ```
-
-## What's Different Now? 🎉
-
-### Before (Old System):
-- ❌ Only API endpoints accessible via `/docs`
-- ❌ Results only shown in terminal logs
-- ❌ No visual progress tracking
-- ❌ Difficult for non-technical users
-- ❌ No real-time feedback
-
-### After (New System):
-- ✅ Beautiful web interface at `/app`
-- ✅ Results displayed in browser with formatting
-- ✅ Real-time progress bars and status updates
-- ✅ Easy file upload with drag & drop
-- ✅ Tabbed interface for different workflows
-- ✅ Visual paper cards with summaries
-- ✅ Responsive design for mobile/desktop
-- ✅ Error handling with user-friendly messages
 
 ## API Endpoints
 
